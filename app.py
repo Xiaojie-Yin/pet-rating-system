@@ -302,6 +302,7 @@ if "show_instructions" not in st.session_state:
     st.session_state.show_instructions = True
 
 if st.session_state.show_instructions:
+
     st.info(
         "### 使用说明\n\n"
         "1）请先在左侧输入您的姓名。\n\n"
@@ -312,13 +313,16 @@ if st.session_state.show_instructions:
         "   - 肿瘤成像对比度（1–5 分）\n\n"
         "4）请判断哪一组 PET 更可能为真实 PET（A 或 B）。\n\n"
         "5）点击“提交并进入下一例”后，系统将自动保存结果并进入下一病例。\n\n"
+        "6）所有病例评估完成后，请点击页面下方的“Download Results”按钮下载评分结果表格。\n\n"
         "说明：所有图像均采用固定窗宽窗位显示，不进行自动对比度调整。"
     )
 
     if st.button("我已了解，开始评估", type="primary"):
         st.session_state.show_instructions = False
         st.rerun()
+
     st.stop()
+
 
 # Ensure data exists (download & unzip if needed)
 ensure_data_ready()
@@ -353,30 +357,11 @@ st.sidebar.write(f"Max cases: {MAX_CASES}")
 st.sidebar.write(f"Auto initial slice: {AUTO_INIT_SLICE}")
 
 with st.sidebar.expander("Admin", expanded=False):
-
     if st.button("Reset session"):
-        st.session_state.cases = prepare_cases(
-            DATA_ROOT,
-            max_cases=MAX_CASES
-        )
+        st.session_state.cases = prepare_cases(DATA_ROOT, max_cases=MAX_CASES)
         st.session_state.idx = 0
         st.session_state.show_instructions = True
         st.rerun()
-
-    st.markdown("---")
-    st.subheader("Download Results")
-
-    if os.path.exists(SAVE_FILE):
-
-        with open(SAVE_FILE, "rb") as f:
-            st.download_button(
-                label="Download ratings.csv",
-                data=f,
-                file_name="ratings.csv",
-                mime="text/csv"
-            )
-    else:
-        st.info("No results file yet.")
 
 
 # ===============================
@@ -397,7 +382,25 @@ if len(cases) == 0:
 if st.session_state.get("finished", False):
     st.success("🎉 所有病例评估完成，感谢您的参与！")
     st.balloons()
+
+    st.markdown("### 📄 下载评估结果")
+
+    if os.path.exists(SAVE_FILE):
+        try:
+            with open(SAVE_FILE, "rb") as f:
+                st.download_button(
+                    label="⬇️ Download Results (ratings.csv)",
+                    data=f,
+                    file_name="ratings.csv",
+                    mime="text/csv",
+                )
+        except Exception as e:
+            st.error(f"结果文件读取失败：{repr(e)}")
+    else:
+        st.error("未找到结果文件（ratings.csv）。请联系管理员确认保存路径或检查是否已提交过评分。")
+
     st.stop()
+
 
 case = cases[idx]
 
@@ -527,6 +530,7 @@ if submit:
 
     # ---- otherwise continue ----
     st.rerun()
+
 
 
 
