@@ -375,8 +375,9 @@ if len(cases) == 0:
     )
     st.stop()
 
-if idx >= len(cases):
-    st.success("All cases completed. Thank you!")
+if st.session_state.get("finished", False):
+    st.success("🎉 所有病例评估完成，感谢您的参与！")
+    st.balloons()
     st.stop()
 
 case = cases[idx]
@@ -490,8 +491,23 @@ if submit:
         "path_b": case["B"],
     }
 
-    save_rating(record)
+    # ---- save first ----
+    try:
+        save_rating(record)
+    except Exception as e:
+        st.error(f"保存失败：{repr(e)}")
+        st.stop()
 
+    # ---- update index ----
     st.session_state.idx += 1
+
+    # ---- if finished, go to done page ----
+    if st.session_state.idx >= len(cases):
+        st.session_state.finished = True
+        st.rerun()
+
+    # ---- otherwise continue ----
     st.rerun()
+
+
 
