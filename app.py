@@ -26,7 +26,7 @@ DATA_ZIP_URL = "https://huggingface.co/datasets/jxyz1224/pet-rating-data/resolve
 DATA_ZIP_PATH = "data/dataset.zip"
 
 # 最多评估多少例（None = 全部）
-MAX_CASES = 40
+MAX_CASES = 5
 
 # 保存目录（建议放到项目根目录的 results/，便于你后面下载）
 SAVE_DIR = "results"
@@ -431,11 +431,11 @@ axes[0].set_title(f"CT (HU [{CT_MIN}, {CT_MAX}])")
 axes[0].axis("off")
 
 axes[1].imshow(a_disp, cmap="gray", vmin=PET_MIN, vmax=PET_MAX)
-axes[1].set_title(f"PET A (SUV [{PET_MIN}, {PET_MAX}])")
+axes[1].set_title(f"PET A (SUV [{PET_MIN + 2}, {PET_MAX + 2}])")
 axes[1].axis("off")
 
 axes[2].imshow(b_disp, cmap="gray", vmin=PET_MIN, vmax=PET_MAX)
-axes[2].set_title(f"PET B (SUV [{PET_MIN}, {PET_MAX}])")
+axes[2].set_title(f"PET B (SUV [{PET_MIN + 2}, {PET_MAX + 2}])")
 axes[2].axis("off")
 
 st.pyplot(fig, use_container_width=True)
@@ -494,3 +494,4 @@ if submit:
 
     st.session_state.idx += 1
     st.rerun()
+
