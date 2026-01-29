@@ -367,7 +367,20 @@ with st.sidebar.expander("Admin", expanded=False):
         st.session_state.show_instructions = True
         st.rerun()
 
+    st.markdown("---")
+    st.subheader("Download Results")
 
+    if os.path.exists(SAVE_FILE):
+
+        with open(SAVE_FILE, "rb") as f:
+            st.download_button(
+                label="Download ratings.csv",
+                data=f,
+                file_name="ratings.csv",
+                mime="text/csv"
+            )
+    else:
+        st.info("No results file yet.")
 
 
 # ===============================
@@ -536,6 +549,7 @@ if submit:
 
     # ---- otherwise continue ----
     st.rerun()
+
 
 
 
