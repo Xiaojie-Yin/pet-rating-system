@@ -367,7 +367,6 @@ with st.sidebar.expander("Admin", expanded=False):
         st.session_state.show_instructions = True
         st.rerun()
 
-    st.subheader("Download Results")
 
     if os.path.exists(SAVE_FILE):
 
@@ -549,6 +548,7 @@ if submit:
 
     # ---- otherwise continue ----
     st.rerun()
+
 
 
 
