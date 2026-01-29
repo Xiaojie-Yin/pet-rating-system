@@ -26,7 +26,7 @@ DATA_ZIP_URL = "https://huggingface.co/datasets/jxyz1224/pet-rating-data/resolve
 DATA_ZIP_PATH = "data/dataset.zip"
 
 # 最多评估多少例（None = 全部）
-MAX_CASES = 38
+MAX_CASES = 39
 
 # 保存目录（建议放到项目根目录的 results/，便于你后面下载）
 SAVE_DIR = "results"
@@ -549,6 +549,7 @@ if submit:
 
     # ---- otherwise continue ----
     st.rerun()
+
 
 
 
