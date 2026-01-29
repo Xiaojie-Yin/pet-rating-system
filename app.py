@@ -26,7 +26,7 @@ DATA_ZIP_URL = "https://huggingface.co/datasets/jxyz1224/pet-rating-data/resolve
 DATA_ZIP_PATH = "data/dataset.zip"
 
 # 最多评估多少例（None = 全部）
-MAX_CASES = 10
+MAX_CASES = 40
 
 # 保存目录（建议放到项目根目录的 results/，便于你后面下载）
 SAVE_DIR = "results"
@@ -82,7 +82,7 @@ def ensure_data_ready():
 
     try:
         # If folder exists but empty, still download
-        st.warning("首次启动需要下载评估数据（约 600MB），请耐心等待...")
+        st.warning("首次启动需要下载评估数据（约 400MB），请耐心等待...")
 
         # Download zip
         with st.spinner("正在下载数据..."):
@@ -548,6 +548,7 @@ if submit:
 
     # ---- otherwise continue ----
     st.rerun()
+
 
 
 
