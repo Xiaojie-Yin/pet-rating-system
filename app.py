@@ -21,14 +21,14 @@ import requests
 DATA_ROOT = "data/dataset"
 
 # Hugging Face zip URL
-# 你给的链接可用；我这里保留原样
+# The provided URL is kept unchanged
 DATA_ZIP_URL = "https://huggingface.co/datasets/jxyz1224/pet-rating-data/resolve/main/dataset.zip?download=true"
 DATA_ZIP_PATH = "data/dataset.zip"
 
-# 最多评估多少例（None = 全部）
+# Maximum number of cases to evaluate (None = all cases)
 MAX_CASES = 38
 
-# 保存目录（建议放到项目根目录的 results/，便于你后面下载）
+# Save directory (results/ under the project root is convenient for later download)
 SAVE_DIR = "results"
 SAVE_FILE = os.path.join(SAVE_DIR, "ratings.csv")
 
@@ -37,8 +37,8 @@ CT_MIN, CT_MAX = -160, 240
 PET_MIN, PET_MAX = -2, 18  # display window [PET_MIN, PET_MAX]
 
 # Slice rules
-DROP_FIRST_LAST_SLICE = True  # 去掉第1张和最后1张切片
-AUTO_INIT_SLICE = True        # 初始切片用“(A的SUVmax + B的SUVmax) 最大”的切片
+DROP_FIRST_LAST_SLICE = True  # Remove the first and last slices
+AUTO_INIT_SLICE = True        # Initialize using the slice with the maximum SUVmax(A) + SUVmax(B)
 
 # Download lock (avoid multiple downloads)
 DOWNLOAD_LOCK = "data/.download.lock"
@@ -46,7 +46,7 @@ DOWNLOAD_DONE = "data/.download.done"
 
 
 # ===============================
-# Data 준비 (download & unzip)
+# Data preparation (download & unzip)
 # ===============================
 
 def ensure_data_ready():
@@ -65,7 +65,7 @@ def ensure_data_ready():
 
     # If another session is downloading, wait
     if os.path.exists(DOWNLOAD_LOCK) and not os.path.exists(DOWNLOAD_DONE):
-        with st.spinner("数据正在准备中（其他会话正在下载/解压），请稍候..."):
+        with st.spinner("Data are being prepared by another session. Please wait..."):
             # Wait up to ~10 minutes
             for _ in range(600):
                 if os.path.exists(DOWNLOAD_DONE) and os.path.exists(DATA_ROOT) and len(os.listdir(DATA_ROOT)) > 0:
@@ -82,10 +82,10 @@ def ensure_data_ready():
 
     try:
         # If folder exists but empty, still download
-        st.warning("首次启动需要下载评估数据（约 400MB），请耐心等待...")
+        st.warning("The rating dataset needs to be downloaded on first launch (approximately 400 MB). Please wait...")
 
         # Download zip
-        with st.spinner("正在下载数据..."):
+        with st.spinner("Downloading data..."):
             r = requests.get(DATA_ZIP_URL, stream=True, timeout=600)
             r.raise_for_status()
             with open(DATA_ZIP_PATH, "wb") as f:
@@ -94,16 +94,16 @@ def ensure_data_ready():
                         f.write(chunk)
 
         # Unzip
-        with st.spinner("正在解压数据..."):
+        with st.spinner("Extracting data..."):
             with zipfile.ZipFile(DATA_ZIP_PATH, "r") as zf:
                 zf.extractall("data")
 
         # Validate
         if not (os.path.exists(DATA_ROOT) and len(os.listdir(DATA_ROOT)) > 0):
             st.error(
-                "数据解压后未找到有效的 DATA_ROOT。\n\n"
-                f"期望存在：{DATA_ROOT}\n"
-                "请检查 zip 包内部是否包含 dataset/ 文件夹。"
+                "No valid DATA_ROOT was found after extraction.\n\n"
+                f"Expected path: {DATA_ROOT}\n"
+                "Please check whether the zip archive contains a dataset/ folder."
             )
             st.stop()
 
@@ -111,19 +111,19 @@ def ensure_data_ready():
         with open(DOWNLOAD_DONE, "w", encoding="utf-8") as f:
             f.write(str(datetime.now()))
 
-        st.success("数据已准备完成。")
+        st.success("Data are ready.")
 
     except requests.HTTPError as e:
         st.error(
-            "下载数据失败（可能是 Hugging Face 数据集是 Private 导致无权限）。\n\n"
+            "Failed to download the dataset. The Hugging Face dataset may be private or inaccessible.\n\n"
             f"HTTPError: {e}\n\n"
-            "解决方案：\n"
-            "1）把 Hugging Face 数据集改为 Public；或\n"
-            "2）在 Streamlit Cloud 设置 HF_TOKEN 后再下载。\n"
+            "Possible solutions:\n"
+            "1) Make the Hugging Face dataset public; or\n"
+            "2) Set HF_TOKEN in Streamlit Cloud and retry.\n"
         )
         st.stop()
     except Exception as e:
-        st.error(f"数据准备失败：{repr(e)}")
+        st.error(f"Data preparation failed: {repr(e)}")
         st.stop()
     finally:
         # Remove lock (best effort)
@@ -149,7 +149,7 @@ def rotate_clockwise_90(img: np.ndarray) -> np.ndarray:
 
 def find_file(folder, keywords):
     """
-    在 folder 里找包含 keywords 的文件（不区分大小写）
+    Find a file in folder that contains all keywords (case-insensitive)
     keywords: list[str]
     """
     for f in os.listdir(folder):
@@ -166,9 +166,9 @@ def natural_key(s):
 
 def prepare_cases(root, max_cases=None):
     """
-    支持任意患者ID文件夹名
-    自动搜索 CT / PET1 / PET2
-    保持文件夹自然顺序，不打乱case顺序；仅随机A/B
+    Support arbitrary patient ID folder names
+    Automatically search CT / PET1 / PET2
+    Keep cases in natural folder order; only randomize PET A/B
     """
     cases = []
 
@@ -190,7 +190,7 @@ def prepare_cases(root, max_cases=None):
         if ct is None or pt1 is None or pt2 is None:
             continue
 
-        # 只随机 A/B，不打乱 case 顺序
+        # Randomize A/B only; do not shuffle case order
         if random.random() < 0.5:
             a, b = pt1, pt2
             gt = "A"
@@ -304,20 +304,20 @@ if "show_instructions" not in st.session_state:
 if st.session_state.show_instructions:
 
     st.info(
-        "### 使用说明\n\n"
-        "1）请先在左侧输入您的姓名。\n\n"
-        "2）系统会依次显示每位患者的 CT 与两组 PET 图像（A / B），"
-        "并自动定位在肿瘤代谢最明显的层面附近，便于评估。\n\n"
-        "3）请通过下方滑块浏览不同切片后，对 PET A 和 PET B 分别进行评分：\n"
-        "   - 成像质量（1–5 分）\n"
-        "   - 肿瘤成像对比度（1–5 分）\n\n"
-        "4）请判断哪一组 PET 更可能为真实 PET（A 或 B）。\n\n"
-        "5）点击“提交并进入下一例”后，系统将自动保存结果并进入下一病例。\n\n"
-        "6）所有病例评估完成后，请点击页面下方的“Download Results”按钮下载评分结果表格。\n\n"
-        "说明：所有图像均采用固定窗宽窗位显示，不进行自动对比度调整。"
+        "### Instructions\n\n"
+        "1）Please enter your name in the sidebar first.\n\n"
+        "2) The system will sequentially display the CT image and two PET images (A / B) for each patient,"
+        " with the initial slice automatically set near the level with the most prominent metabolic uptake.\n\n"
+        "3) Use the slice slider below to review different axial slices, then rate PET A and PET B separately:\n"
+        "   - Image quality (1–5)\n"
+        "   - Tumor contrast (1–5)\n\n"
+        "4) Indicate which PET image is more likely to be the real PET (A or B).\n\n"
+        "5) After clicking “Submit and Continue”, the result will be saved automatically and the next case will be shown.\n\n"
+        "6) After all cases are completed, click the “Download Results” button at the bottom of the page to download the rating table.\n\n"
+        "Note: all images are displayed using fixed window settings, without automatic contrast adjustment."
     )
 
-    if st.button("我已了解，开始评估", type="primary"):
+    if st.button("I understand. Start rating", type="primary"):
         st.session_state.show_instructions = False
         st.rerun()
 
@@ -327,7 +327,7 @@ if st.session_state.show_instructions:
 # Ensure data exists (download & unzip if needed)
 ensure_data_ready()
 
-# 初始化：只在首次进入会话时执行
+# Initialize only once per session
 if "initialized" not in st.session_state:
     st.session_state.cases = prepare_cases(DATA_ROOT, max_cases=MAX_CASES)
     st.session_state.idx = 0
@@ -399,10 +399,10 @@ if len(cases) == 0:
     st.stop()
 
 if st.session_state.get("finished", False):
-    st.success("🎉 所有病例评估完成，感谢您的参与！")
+    st.success("🎉 All cases have been completed. Thank you for your participation!")
     st.balloons()
 
-    st.markdown("### 📄 下载评估结果")
+    st.markdown("### 📄 Download Results")
 
     if os.path.exists(SAVE_FILE):
         try:
@@ -414,9 +414,9 @@ if st.session_state.get("finished", False):
                     mime="text/csv",
                 )
         except Exception as e:
-            st.error(f"结果文件读取失败：{repr(e)}")
+            st.error(f"Failed to read the result file: {repr(e)}")
     else:
-        st.error("未找到结果文件（ratings.csv）。请联系管理员确认保存路径或检查是否已提交过评分。")
+        st.error("The result file (ratings.csv) was not found. Please contact the administrator to confirm the save path or check whether any ratings have been submitted.")
 
     st.stop()
 
@@ -487,26 +487,26 @@ st.pyplot(fig, use_container_width=True)
 # Rating
 # ===============================
 
-st.markdown("### 评分（1–5 分，分数越高越好）")
+st.markdown("### Rating (1–5; higher scores indicate better quality)")
 
-st.caption("请分别对 PET A 和 PET B 进行评分。")
+st.caption("Please rate PET A and PET B separately.")
 
 c1, c2 = st.columns(2)
 
 with c1:
     st.subheader("PET A")
-    quality_a = st.slider("成像质量（A）", 1, 5, 3, key=f"qa_{idx}")
-    contrast_a = st.slider("肿瘤成像对比度（A）", 1, 5, 3, key=f"ca_{idx}")
+    quality_a = st.slider("Image quality (A)", 1, 5, 3, key=f"qa_{idx}")
+    contrast_a = st.slider("Tumor contrast (A)", 1, 5, 3, key=f"ca_{idx}")
 
 with c2:
     st.subheader("PET B")
-    quality_b = st.slider("成像质量（B）", 1, 5, 3, key=f"qb_{idx}")
-    contrast_b = st.slider("肿瘤成像对比度（B）", 1, 5, 3, key=f"cb_{idx}")
+    quality_b = st.slider("Image quality (B)", 1, 5, 3, key=f"qb_{idx}")
+    contrast_b = st.slider("Tumor contrast (B)", 1, 5, 3, key=f"cb_{idx}")
 
-st.markdown("### 您认为哪一个更可能是真实 PET？")
-guess_gt = st.radio("请选择", ["A", "B"], horizontal=True, key=f"guess_{idx}")
+st.markdown("### Which image is more likely to be the real PET?")
+guess_gt = st.radio("Please select", ["A", "B"], horizontal=True, key=f"guess_{idx}")
 
-submit = st.button("提交并进入下一例", type="primary")
+submit = st.button("Submit and Continue", type="primary")
 
 
 # ===============================
@@ -515,7 +515,7 @@ submit = st.button("提交并进入下一例", type="primary")
 
 if submit:
     if reviewer.strip() == "":
-        st.error("请先在左侧输入您的姓名。")
+        st.error("Please enter your name in the sidebar first.")
         st.stop()
 
     record = {
@@ -536,7 +536,7 @@ if submit:
     try:
         save_rating(record)
     except Exception as e:
-        st.error(f"保存失败：{repr(e)}")
+        st.error(f"Failed to save the rating: {repr(e)}")
         st.stop()
 
     # ---- update index ----
@@ -549,7 +549,6 @@ if submit:
 
     # ---- otherwise continue ----
     st.rerun()
-
 
 
 
