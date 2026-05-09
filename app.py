@@ -26,7 +26,12 @@ DATA_ZIP_URL = "https://huggingface.co/datasets/jxyz1224/pet-rating-data/resolve
 DATA_ZIP_PATH = "data/dataset.zip"
 
 # Maximum number of cases to evaluate (None = all cases)
-MAX_CASES = 38
+MAX_CASES = 50
+
+# Displayed total number of cases in the sidebar.
+# This is fixed for presentation/screenshot purposes and does not depend on
+# how many valid cases are actually found in DATA_ROOT.
+DISPLAY_TOTAL_CASES = 50
 
 # Save directory (results/ under the project root is convenient for later download)
 SAVE_DIR = "results"
@@ -295,6 +300,23 @@ def suggest_initial_slice(a_vol: np.ndarray, b_vol: np.ndarray, z_min: int, z_ma
 # ===============================
 
 st.set_page_config(layout="wide")
+
+# Slightly widen the sidebar and keep the main content visually compact.
+st.markdown(
+    """
+    <style>
+    [data-testid="stSidebar"] {
+        min-width: 360px;
+        max-width: 360px;
+    }
+    [data-testid="stSidebar"] > div:first-child {
+        width: 360px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
 st.title("Blinded PET Rating System")
 
 # --------- Instruction "modal" (first open) ----------
@@ -352,8 +374,8 @@ st.sidebar.write("Save to:")
 st.sidebar.code(SAVE_FILE)
 
 st.sidebar.markdown("---")
-st.sidebar.write(f"Case: {min(idx+1, max(len(cases), 1))} / {len(cases)}")
-st.sidebar.write(f"Max cases: {MAX_CASES}")
+st.sidebar.write(f"Case: {min(idx + 1, DISPLAY_TOTAL_CASES)} / {DISPLAY_TOTAL_CASES}")
+st.sidebar.write(f"Max cases: {DISPLAY_TOTAL_CASES}")
 st.sidebar.write(f"Auto initial slice: {AUTO_INIT_SLICE}")
 
 with st.sidebar.expander("Admin", expanded=False):
@@ -466,7 +488,7 @@ b_disp = rotate_clockwise_90(b_slice)
 # Visualization (fixed window/level)
 # ===============================
 
-fig, axes = plt.subplots(1, 3, figsize=(14, 5))
+fig, axes = plt.subplots(1, 3, figsize=(11.5, 4.2))
 
 axes[0].imshow(ct_disp, cmap="gray", vmin=CT_MIN, vmax=CT_MAX)
 axes[0].set_title(f"CT (HU [{CT_MIN}, {CT_MAX}])")
@@ -480,7 +502,8 @@ axes[2].imshow(b_disp, cmap="gray", vmin=PET_MIN, vmax=PET_MAX)
 axes[2].set_title(f"PET B (SUV [{PET_MIN + 2}, {PET_MAX + 2}])")
 axes[2].axis("off")
 
-st.pyplot(fig, use_container_width=True)
+fig.tight_layout()
+st.pyplot(fig, use_container_width=False)
 
 
 # ===============================
